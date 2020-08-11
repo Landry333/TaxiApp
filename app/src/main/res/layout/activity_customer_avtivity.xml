@@ -16,4 +16,14 @@
         android:layout_height="wrap_content"
         android:hint="password"
         android:id="@+id/password"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="login"
+        android:id="@+id/login"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="registration"
+        android:id="@+id/registration"/>
 </LinearLayout>
