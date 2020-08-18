@@ -65,6 +65,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
                     pickupMarker = mMap.addMarker(new MarkerOptions().position(pickupLocation).title("Pickup Here").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_pickup)));
 
                     mRequest.setText("Getting your Driver....");
+                
+                getClosestDriver();
 
                 }
             }
