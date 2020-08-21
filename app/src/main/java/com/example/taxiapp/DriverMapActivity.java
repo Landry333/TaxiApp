@@ -109,6 +109,35 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         }
     }
     
+    public void onLocationChanged(Location location) {
+        if(getApplicationContext()!=null){
+
+            mLastLocation = location;
+
+            LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("driversAvailable");
+            DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("driversWorking");
+            GeoFire geoFireAvailable = new GeoFire(refAvailable);
+            GeoFire geoFireWorking = new GeoFire(refWorking);
+
+            switch (customerId){
+                case "":
+                    geoFireWorking.removeLocation(userId);
+                    geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                    break;
+
+                default:
+                    geoFireAvailable.removeLocation(userId);
+                    geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                    break;
+            }
+        }
+    }
+    
     private void checkLocationPermission() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
