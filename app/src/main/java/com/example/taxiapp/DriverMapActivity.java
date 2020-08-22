@@ -18,6 +18,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
     private Boolean isLoggingOut = false;
     private FusedLocationProviderClient mFusedLocationClient;
     Location mLastLocation;
+    LocationRequest mLocationRequest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -169,6 +170,12 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                 ActivityCompat.requestPermissions(DriverMapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
+    }
+    
+    private void connectDriver(){
+        checkLocationPermission();
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        mMap.setMyLocationEnabled(true);
     }
     
     private void disconnectDriver(){
