@@ -15,11 +15,15 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
     private GoogleMap mMap;
     private String customerId = "";
+    private Boolean isLoggingOut = false;
+    private FusedLocationProviderClient mFusedLocationClient;
+    Location mLastLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_driver_map);
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -30,7 +34,6 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             @Override
             public void onClick(View v) {
                 isLoggingOut = true;
-
                 disconnectDriver();
 
                 FirebaseAuth.getInstance().signOut();
@@ -109,34 +112,43 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
         }
     }
     
-    public void onLocationChanged(Location location) {
-        if(getApplicationContext()!=null){
+    LocationCallback mLocationCallback = new LocationCallback(){
+        @Override
+        public void onLocationResult(LocationResult locationResult) {
+            for(Location location : locationResult.getLocations()){
+                if(getApplicationContext()!=null){
 
-            mLastLocation = location;
+                    if(!customerId.equals("") && mLastLocation!=null && location != null){
+                        rideDistance += mLastLocation.distanceTo(location)/1000;
+                    }
+                    mLastLocation = location;
 
-            LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
 
-            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("driversAvailable");
-            DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("driversWorking");
-            GeoFire geoFireAvailable = new GeoFire(refAvailable);
-            GeoFire geoFireWorking = new GeoFire(refWorking);
+                    LatLng latLng = new LatLng(location.getLatitude(),location.getLongitude());
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                    mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
 
-            switch (customerId){
-                case "":
-                    geoFireWorking.removeLocation(userId);
-                    geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                    break;
+                    String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    DatabaseReference refAvailable = FirebaseDatabase.getInstance().getReference("driversAvailable");
+                    DatabaseReference refWorking = FirebaseDatabase.getInstance().getReference("driversWorking");
+                    GeoFire geoFireAvailable = new GeoFire(refAvailable);
+                    GeoFire geoFireWorking = new GeoFire(refWorking);
 
-                default:
-                    geoFireAvailable.removeLocation(userId);
-                    geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
-                    break;
+                    switch (customerId){
+                        case "":
+                            geoFireWorking.removeLocation(userId);
+                            geoFireAvailable.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                            break;
+
+                        default:
+                            geoFireAvailable.removeLocation(userId);
+                            geoFireWorking.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
+                            break;
+                    }
+                }
             }
         }
-    }
+    };
     
     private void checkLocationPermission() {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
@@ -157,5 +169,16 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
                 ActivityCompat.requestPermissions(DriverMapActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
+    }
+    
+    private void disconnectDriver(){
+        if(mFusedLocationClient != null){
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        }
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
+
+        GeoFire geoFire = new GeoFire(ref);
+        geoFire.removeLocation(userId);
     }
 }
