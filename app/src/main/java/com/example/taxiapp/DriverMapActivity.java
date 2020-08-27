@@ -51,6 +51,7 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
 
                 FirebaseAuth.getInstance().signOut();
                 Intent intent = new Intent(DriverMapActivity.this, MainActivity.class);
+                recordRide();
                 startActivity(intent);
                 finish();
                 return;
@@ -153,6 +154,22 @@ public class DriverMapActivity extends FragmentActivity implements OnMapReadyCal
             public void onCancelled(DatabaseError databaseError) {
             }
         });
+    }
+    
+    private void recordRide(){
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference driverRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Drivers").child(userId).child("history");
+        DatabaseReference customerRef = FirebaseDatabase.getInstance().getReference().child("Users").child("Customers").child(customerId).child("history");
+        DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference().child("history");
+        String requestId = historyRef.push().getKey();
+        driverRef.child(requestId).setValue(true);
+        customerRef.child(requestId).setValue(true);
+
+        HashMap map = new HashMap();
+        map.put("driver", userId);
+        map.put("customer", customerId);
+        map.put("rating", 0);
+        historyRef.child(requestId).updateChildren(map);
     }
 
     @Override
